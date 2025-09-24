@@ -614,3 +614,9 @@ const courseContent = {
         progress: 100.0
     }
 };
+
+// --- NUEVO: Configuración del repositorio GitHub ---
+const githubConfig = {
+    usuario: "lespqui16",   // 👈 cámbialo por tu usuario GitHub
+    repo: "DATABASE2",      // 👈 cámbialo por tu repo
+  };
