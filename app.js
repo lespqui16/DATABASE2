@@ -147,7 +147,12 @@ function createActivitiesSection(weekNumber, activities) {
                             <div class="activity-title">${activity.title}</div>
                             <div class="activity-description">${activity.description}</div>
                             <div class="activity-type">${activity.type.toUpperCase()} • ${activity.size || 'N/A'}</div>
-                        </div>                   
+                        </div>
+                        <div class="activity-actions">
+                            <button class="preview-btn" onclick="previewFile(${weekNumber}, '${activity.filename}')">
+                                👁️ Vista previa
+                            </button>
+                        </div>
                     </div>
                 `).join('')}
             </div>
@@ -160,6 +165,45 @@ function createActivitiesSection(weekNumber, activities) {
             </div>
         </div>
     `;
+}
+
+
+function previewFile(weekNumber, filename) {
+    const baseUrl = "https://raw.githubusercontent.com/lespqui16/DATABASE2/main";
+    const weekFolder = `semana${weekNumber.toString().padStart(2, '0')}`;
+    const fileUrl = `${baseUrl}/${weekFolder}/${filename}`;
+
+    // Mostrar modal
+    const modal = document.getElementById("previewModal");
+    const frame = document.getElementById("previewFrame");
+
+    frame.src = getPreviewUrl(fileUrl, filename); 
+    modal.style.display = "block";
+}
+
+// Cerrar modal
+function closePreview() {
+    const modal = document.getElementById("previewModal");
+    const frame = document.getElementById("previewFrame");
+    frame.src = "";
+    modal.style.display = "none";
+}
+
+// Determinar URL de vista previa según tipo de archivo
+function getPreviewUrl(fileUrl, filename) {
+    const ext = filename.split('.').pop().toLowerCase();
+
+    if (ext === "pdf") {
+        return fileUrl; // PDF se muestra directo
+    } else if (["doc", "docx", "ppt", "pptx", "xls", "xlsx"].includes(ext)) {
+        return `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(fileUrl)}`;
+    } else if (["png", "jpg", "jpeg", "gif"].includes(ext)) {
+        return fileUrl; // Imágenes directo
+    } else if (["sql", "json", "txt", "js", "css", "html"].includes(ext)) {
+        return `https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl)}&embedded=true`;
+    } else {
+        return fileUrl; // fallback: abrir directo
+    }
 }
 
 // Crear la sección de recursos
@@ -247,31 +291,6 @@ function goToMain() {
     }
 }
 
-// Función para descargar archivos (simulada)
-function downloadFile(filename) {
-    // En producción, aquí irías a tu servidor o repositorio
-    alert(`Descargando: ${filename}\n\nEn un entorno de producción, este archivo se descargaría desde tu servidor.`);
-    
-    // Ejemplo de implementación real:
-    // window.open(`./files/${filename}`, '_blank');
-    
-    // O usando fetch para descarga con progreso:
-    /*
-    fetch(`/api/download/${filename}`)
-        .then(response => response.blob())
-        .then(blob => {
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.style.display = 'none';
-            a.href = url;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
-        })
-        .catch(error => console.error('Error:', error));
-    */
-}
 
 // Función para visitar GitHub
 function visitGitHub(weekNumber) {
