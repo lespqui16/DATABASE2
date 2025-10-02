@@ -6,6 +6,7 @@ function initializeApp() {
     createUnitsAndWeeks();
     createWeekPages();
     addEventListeners();
+    loadGitHubFilesForAllWeeks();
 }
 
 // Crear las unidades y semanas organizadas
@@ -18,7 +19,7 @@ function createUnitsAndWeeks() {
     courseStructure.units.forEach(unit => {
         const unitDiv = document.createElement('div');
         unitDiv.className = 'units-container';
-        
+
         const unitHeader = document.createElement('div');
         unitHeader.className = 'unit-header';
         unitHeader.innerHTML = `
@@ -31,17 +32,18 @@ function createUnitsAndWeeks() {
                 </div>
             </div>
         `;
-        
-        const weeksGrid = document.createElement('div');
-        weeksGrid.className = 'weeks-grid';
-        
+
+        // Cambiar a fila lineal
+        const weeksRow = document.createElement('div');
+        weeksRow.className = 'weeks-row';
+
         unit.weeks.forEach(weekNumber => {
             const weekCard = createWeekCard(weekNumber);
-            weeksGrid.appendChild(weekCard);
+            weeksRow.appendChild(weekCard);
         });
-        
+
         unitDiv.appendChild(unitHeader);
-        unitDiv.appendChild(weeksGrid);
+        unitDiv.appendChild(weeksRow);
         unitsContainer.appendChild(unitDiv);
     });
 }
@@ -173,12 +175,25 @@ async function loadActivitiesFromGitHub(weekNumber) {
 
 // Crear sección de actividades con archivos de GitHub (solo vista previa)
 function createGitHubActivitiesSection(weekNumber, files) {
+    const isAdmin = !!(window.authService && authService.isAdmin && authService.isAdmin());
+    let adminControls = '';
+    if (isAdmin) {
+        adminControls = `
+            <div style="margin-bottom:18px; display:flex; gap:12px; align-items:center; justify-content:center;">
+                <input type="file" id="uploadFileInput-${weekNumber}" style="display:none;" onchange="adminUploadFile(event, ${weekNumber})" />
+                <button class="admin-btn admin-btn-strong" onclick="document.getElementById('uploadFileInput-${weekNumber}').click()">
+                    <span style="font-size:1.2em;">⬆️</span> Subir archivo
+                </button>
+            </div>
+        `;
+    }
     return `
         <div class="content-section">
             <h3 class="section-title">
                 <span class="section-icon">📝</span>
                 Actividades de la Semana ${weekNumber}
             </h3>
+            ${adminControls}
             <div class="activities-container">
                 ${files.map(file => `
                     <div class="activity-card">
@@ -191,7 +206,10 @@ function createGitHubActivitiesSection(weekNumber, files) {
                             <div class="activity-type">${file.type.toUpperCase()}</div>
                         </div>
                         <div class="activity-actions">
-
+                            <button class="preview-btn" onclick="previewFile('${file.download_url}', '${file.type}', '${(file.name || '').replace(/'/g, "\\'")}')">
+                                ${getActivityIcon(file.type)} Vista Previa
+                            </button>
+                            ${isAdmin ? `<button class='admin-btn admin-btn-strong' style="margin-left:8px;" onclick='adminDeleteFile(${weekNumber}, "${(file.name || '').replace(/'/g, "\\'")}")'>🗑️ Eliminar</button>` : ''}
                         </div>
                     </div>
                 `).join('')}
@@ -424,3 +442,159 @@ window.goToMain = goToMain;
 window.visitGitHub = visitGitHub;
 window.loadGitHubFilesForAllWeeks = loadGitHubFilesForAllWeeks;
 window.loadActivitiesFromGitHub = loadActivitiesFromGitHub;
+
+function previewFile(downloadUrl, type, name) {
+    const modal = document.getElementById('previewModal');
+    const body = document.getElementById('previewBody');
+    const title = document.getElementById('previewTitle');
+    const closeBtn = document.getElementById('previewClose');
+
+    if (!modal || !body || !title) return;
+
+    title.textContent = name || 'Vista Previa';
+    body.innerHTML = '<div class="preview-loading">Cargando vista previa...</div>';
+
+    const fileType = (type || '').toLowerCase();
+
+    // Convertir URL raw a URL de GitHub para abrir en nueva pestaña
+    function toGithubBlobUrl(rawUrl) {
+        try {
+            // raw: https://raw.githubusercontent.com/lespqui16/DATABASE2/main/semanaXX/file.ext
+            const m = rawUrl.match(/^https?:\/\/raw\.githubusercontent\.com\/([^/]+)\/([^/]+)\/([^/]+)\/(.+)$/);
+            if (!m) return null;
+            const [, user, repo, branch, path] = m;
+            return `https://github.com/${user}/${repo}/blob/${branch}/${path}`;
+        } catch { 
+            return null; 
+        }
+    }
+
+    const githubBlobUrl = toGithubBlobUrl(downloadUrl);
+
+    let contentHtml = '';
+    
+    if (fileType === 'pdf') {
+        // Solución para PDF: usar Google Docs Viewer
+        const pdfViewerUrl = `https://docs.google.com/gview?url=${encodeURIComponent(downloadUrl)}&embedded=true`;
+        contentHtml = `<iframe src="${pdfViewerUrl}" style="width:100%; height:100%; border:none;"></iframe>`;
+        
+    } else if (fileType === 'image') {
+        // Imágenes sí funcionan directamente
+        contentHtml = `<img src="${downloadUrl}" alt="${name}" style="max-width:100%; max-height:100%; display:block; margin:0 auto;" />`;
+        
+    } else if (fileType === 'txt' || fileType === 'json' || fileType === 'sql' || fileType === 'md') {
+        // Para archivos de texto, cargar contenido via fetch
+        fetch(downloadUrl)
+            .then(response => {
+                if (!response.ok) throw new Error('No se pudo cargar el archivo');
+                return response.text();
+            })
+            .then(text => {
+                const escapedText = escapeHtml(text);
+                body.innerHTML = `
+                    <div style="height:100%; overflow:auto;">
+                        <pre style="padding:20px; margin:0; white-space:pre-wrap; word-wrap:break-word;">${escapedText}</pre>
+                    </div>
+                    ${githubBlobUrl ? `
+                    <div style="text-align:center; padding:10px; border-top:1px solid #eee;">
+                        <a href="${githubBlobUrl}" target="_blank" class="preview-btn">Abrir en GitHub</a>
+                    </div>
+                    ` : ''}
+                `;
+            })
+            .catch(error => {
+                console.error('Error loading text file:', error);
+                body.innerHTML = `
+                    <div class="error-activities" style="text-align:center; padding:40px;">
+                        <p>No se pudo cargar el contenido del archivo.</p>
+                        ${githubBlobUrl ? `
+                        <div style="margin-top:15px;">
+                            <a href="${githubBlobUrl}" target="_blank" class="preview-btn">Abrir en GitHub</a>
+                        </div>
+                        ` : ''}
+                    </div>
+                `;
+            });
+        
+    } else {
+        // Para otros tipos de archivo, mostrar opción de descarga
+        contentHtml = `
+            <div style="text-align:center; padding:40px;">
+                <div style="font-size:48px; margin-bottom:20px;">📁</div>
+                <h3>${name || 'Archivo'}</h3>
+                <p>Este tipo de archivo no se puede previsualizar directamente.</p>
+                <div style="margin-top:30px; display:flex; gap:10px; justify-content:center;">
+                    <a href="${downloadUrl}" download target="_blank" class="preview-btn">
+                        📥 Descargar Archivo
+                    </a>
+                    ${githubBlobUrl ? `
+                    <a href="${githubBlobUrl}" target="_blank" class="preview-btn">
+                        🔗 Abrir en GitHub
+                    </a>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    }
+
+    // Si no es un archivo de texto (que se carga async), establecer el contenido inmediatamente
+    if (!['txt', 'json', 'sql', 'md'].includes(fileType)) {
+        body.innerHTML = contentHtml;
+    }
+
+    // Mostrar modal
+    modal.style.display = 'flex';
+    
+    // Configurar event listeners para cerrar
+    const overlayHandler = (e) => { 
+        if (e.target === modal) closePreview(); 
+    };
+    
+    const escHandler = (ev) => { 
+        if (ev.key === 'Escape') closePreview(); 
+    };
+
+    modal.addEventListener('click', overlayHandler);
+    document.addEventListener('keydown', escHandler);
+    
+    if (closeBtn) {
+        closeBtn.onclick = closePreview;
+    }
+
+    // Guardar referencias para limpieza
+    modal._overlayHandler = overlayHandler;
+    modal._escHandler = escHandler;
+}
+
+
+
+function closePreview() {
+    const modal = document.getElementById('previewModal');
+    const body = document.getElementById('previewBody');
+    const closeBtn = document.getElementById('previewClose');
+    if (!modal || !body) return;
+    modal.style.display = 'none';
+    body.innerHTML = '';
+    if (modal._overlayHandler) {
+        modal.removeEventListener('click', modal._overlayHandler);
+        delete modal._overlayHandler;
+    }
+    if (modal._escHandler) {
+        document.removeEventListener('keydown', modal._escHandler);
+        delete modal._escHandler;
+    }
+    if (closeBtn) closeBtn.onclick = null;
+}
+
+function escapeHtml(str) {
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+// Export
+window.previewFile = previewFile;
+window.closePreview = closePreview;
