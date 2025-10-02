@@ -30,9 +30,10 @@ class GitHubService {
             
             const files = await response.json();
             
-            // Filtrar solo archivos (no carpetas) y mapear información relevante
+            // Filtrar solo archivos (no carpetas) y excluir README.md; mapear información relevante
             const fileList = files
                 .filter(file => file.type === 'file')
+                .filter(file => (file.name || '').toLowerCase() !== 'readme.md')
                 .map(file => ({
                     name: file.name,
                     download_url: file.download_url,
