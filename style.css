@@ -12,12 +12,16 @@ body {
     background: linear-gradient(135deg, #0d0d0d 0%, #1a1a1a 100%);
     min-height: 100vh;
     overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
 }
+
 
 .container {
     max-width: 1200px;
     margin: 0 auto;
     padding: 20px;
+    flex: 1 0 auto;
 }
 
 /* ===== CONTENEDOR SUPERIOR ===== */
@@ -180,16 +184,16 @@ body {
     text-align: center;
     margin-bottom: 40px;
     color: white;
+/* Sticky footer fix for flexbox layout */
+body {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 20px;
+    min-height: 100vh;
 }
 
-.university-info {
-    display: flex;
-    align-items: center;
-    gap: 20px;
+#main-page {
+    flex: 1;
+}
     background: rgba(255, 255, 255, 0.05);
     padding: 25px;
     border-radius: 20px;
@@ -343,11 +347,27 @@ body {
     transition: width 0.3s ease;
 }
 
-.weeks-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+
+.weeks-row {
+    display: flex;
+    flex-direction: row;
     gap: 25px;
     padding: 20px 0;
+    justify-content: flex-start;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #00eaff #1a1a1a;
+}
+.weeks-row::-webkit-scrollbar {
+    height: 8px;
+}
+.weeks-row::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #00eaff, #ff00e5);
+    border-radius: 4px;
+}
+.weeks-row::-webkit-scrollbar-track {
+    background: #1a1a1a;
 }
 
 .week-card {
@@ -359,7 +379,12 @@ body {
     box-shadow: 0 0 20px rgba(0, 234, 255, 0.1);
     position: relative;
     height: 300px;
+    width: 260px;
+    min-width: 260px;
+    max-width: 260px;
     border: 1px solid rgba(0, 234, 255, 0.2);
+    display: flex;
+    flex-direction: column;
 }
 
 .week-card:hover {
@@ -369,11 +394,12 @@ body {
 
 .week-card-image {
     width: 100%;
-    height: 200px;
+    height: 140px;
     background-size: cover;
     background-position: center;
     position: relative;
     overflow: hidden;
+    flex-shrink: 0;
 }
 
 .week-card-overlay {
@@ -403,24 +429,36 @@ body {
 }
 
 .week-card-content {
-    padding: 20px;
-    height: 100px;
+    padding: 18px 16px 12px 16px;
+    min-height: 110px;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start;
+    background: rgba(26,26,26,0.98);
+    flex: 1 1 auto;
+    overflow: hidden;
 }
 
 .week-title {
-    font-size: 1.1rem;
+    font-size: 1.08rem;
     font-weight: 600;
     color: #00eaff;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
+    line-height: 1.2;
+    word-break: break-word;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-height: 2.5em;
 }
 
 .week-subtitle {
-    font-size: 0.9rem;
+    font-size: 0.92rem;
     color: #a0a0a0;
-    line-height: 1.4;
+    line-height: 1.3;
+    word-break: break-word;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-height: 2.7em;
 }
 
 /* ===== PÁGINA DE CONTENIDO SEMANAL ===== */
@@ -1102,6 +1140,7 @@ pre code {
     text-align: center;
     border-top: 2px solid rgba(0, 234, 255, 0.3);
     margin-top: 50px;
+    flex-shrink: 0;
 }
 
 .main-footer p {
@@ -1220,9 +1259,199 @@ pre code {
 }
 
 /* ===== MODAL DE VISTA PREVIA ===== */
-/* Se eliminaron estilos relacionados con modal de vista previa al remover la funcionalidad */
+.preview-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.9);
+    z-index: 4000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+.preview-content {
+    background: #1a1a1a;
+    border-radius: 15px;
+    width: 92%;
+    height: 90%;
+    max-width: 1200px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 0 50px rgba(0, 234, 255, 0.3);
+    border: 2px solid rgba(0, 234, 255, 0.5);
+}
+
+.preview-header {
+    padding: 14px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.preview-title { color: #00eaff; font-weight: 700; }
+.preview-close { background: none; border: none; color: #ff00e5; font-size: 20px; cursor: pointer; }
+.preview-body { flex: 1; padding: 0; overflow: auto; }
+.preview-loading { display:flex; align-items:center; justify-content:center; height:100%; color:#00eaff; }
+
+.preview-btn { background: linear-gradient(135deg, #ff00e5, #9b00ff); color:#fff; border:none; padding:8px 14px; border-radius:20px; font-weight:600; cursor:pointer; }
+.preview-btn:hover { transform: translateY(-1px); box-shadow: 0 0 15px rgba(255,0,229,0.5); }
+
+.download-btn { background: linear-gradient(135deg, #00eaff, #0099cc); color:#fff; border:none; padding:8px 14px; border-radius:20px; font-weight:600; cursor:pointer; text-decoration:none; display:inline-flex; align-items:center; }
+.download-btn:hover { transform: translateY(-1px); box-shadow: 0 0 10px rgba(0,234,255,0.5); }
+
+.admin-btn {
+    background: linear-gradient(135deg, #00eaff, #ff00e5);
+    color: #fff;
+    border: none;
+    padding: 10px 22px;
+    border-radius: 25px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 1rem;
+    box-shadow: 0 0 10px rgba(0,234,255,0.2);
+    transition: all 0.3s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+.admin-btn:hover {
+    background: linear-gradient(135deg, #ff00e5, #00eaff);
+    box-shadow: 0 0 20px #ff00e5;
+    color: #fff;
+}
+.admin-btn-strong {
+    border: 2px solid #00eaff;
+    box-shadow: 0 0 10px #00eaff;
+    font-size: 1.05rem;
+}
 
 .activities-footer {
     text-align: center;
     margin-top: 16px;
+}
+
+.auth-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.auth-btn {
+    background: linear-gradient(135deg, #1f8cff, #00eaff);
+    color: white;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.auth-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 0 10px rgba(0, 234, 255, 0.6);
+}
+
+.user-info { color: #00eaff; font-weight: 600; }
+
+.login-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 3000;
+}
+
+.login-content {
+    width: 90%;
+    max-width: 420px;
+    background: #1a1a1a;
+    border: 1px solid rgba(0, 234, 255, 0.2);
+    border-radius: 12px;
+    box-shadow: 0 0 30px rgba(0, 234, 255, 0.3);
+}
+
+.login-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+.login-title { color: #00eaff; font-weight: 700; }
+.login-close { background: none; border: none; color: #ff00e5; font-size: 20px; cursor: pointer; }
+
+.login-body { padding: 16px; }
+.login-row { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.login-row label { color: #e0e0e0; font-size: 0.9rem; }
+.login-row input { padding: 10px; border-radius: 8px; background: #0d0d0d; border: 1px solid rgba(255,255,255,0.1); color: #fff; }
+.login-actions { text-align: right; }
+.login-hint { margin-top: 10px; font-size: 12px; color: #a0a0a0; }
+
+.contact-form {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(0, 234, 255, 0.2);
+    border-radius: 15px;
+    padding: 24px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    margin: 0 auto;
+}
+
+.form-row {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.form-row label {
+    color: #e0e0e0;
+    font-weight: 600;
+}
+
+.form-row input,
+.form-row textarea {
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: #0d0d0d;
+    color: #fff;
+    font-size: 0.95rem;
+}
+
+.form-row input:focus,
+.form-row textarea:focus {
+    outline: none;
+    border-color: #00eaff;
+    box-shadow: 0 0 0 2px rgba(0, 234, 255, 0.15);
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 8px;
+}
+
+/* Mejorar layout en pantallas grandes */
+@media (min-width: 768px) {
+    .contact-form {
+        padding: 32px;
+    }
+
+    .contact-form .form-row.two-col {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+    }
+}
+
+/* Ajustes en móviles */
+@media (max-width: 480px) {
+    .contact-form {
+        padding: 18px;
+    }
+
+    .form-row {
+        margin-bottom: 14px;
+    }
 }
