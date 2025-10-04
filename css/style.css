@@ -48,7 +48,7 @@ body {
 }
 
 .logo-upla {
-    height: 110px; /* aumentado desde 90px */
+    height: 70px;
     display: flex;
     align-items: center;
     justify-content: center;
